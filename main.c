@@ -2,6 +2,7 @@
 #include <math.h>
 #include <time.h>
 
+int prime_ends[10000] = { 0 }; // в этом массиве будем отмечать всевозможные комбинации цифр которыми может заканчиваться простое число (для проверки диагоналей)
 int cache[100000] = { 0 }; // в этом массиве будем отмечать наличие простого числа и всевозможные комбинации цифр с которых может начинаться нужное простое число (для быстрой проверки наличия)
 int matrix_count = 0; // количество найденных матриц
 
@@ -28,7 +29,7 @@ int is_prime(int n) {
 }
 
 // сумма цифр числа n
-int find_sum_of_numbers(int n) {
+int find_sum_of_digits(int n) {
     return n % 10 + (n / 10) % 10 + (n / 100) % 10 + (n / 1000) % 10 + n / 10000;
 }
 
@@ -46,13 +47,17 @@ int if_even_in_prime(int n) {
 void find_suitable_primes(int s[10000], int sum) {
     int ind = 0;
     for (int n = 10001; n <= 99999; n += 2) {
-        if (is_prime(n) && find_sum_of_numbers(n) == sum) {
+        if (is_prime(n) && find_sum_of_digits(n) == sum) {
             s[ind++] = n;
             cache[n] = 1;
             cache[n / 10] = 1;
             cache[n / 100] = 1;
             cache[n / 1000] = 1;
             cache[n / 10000] = 1;
+            prime_ends[n % 10] = 1;
+            prime_ends[n % 100] = 1;
+            prime_ends[n % 1000] = 1;
+            prime_ends[n % 10000] = 1;
         }
     }
 }
@@ -127,6 +132,8 @@ int check_primes(int m[5], int k, int primes[10000]) {
         if (!cache[(m[0] / 100) % 10]) return 0;
         if (!cache[(m[0] / 1000) % 10]) return 0;
         if (!cache[(m[0] / 10000) % 10]) return 0;
+        if (!cache[(m[0] / 10000) % 10]) return 0;
+        if (!prime_ends[m[0] % 10]) return 0;
         return 1; }
     if (k == 2) {
         if (!cache[m[0] % 10 * 10 + m[1] % 10]) return 0;
@@ -134,7 +141,7 @@ int check_primes(int m[5], int k, int primes[10000]) {
         if (!cache[(m[0] / 100) % 10 * 10 + (m[1] / 100) % 10]) return 0;
         if (!cache[(m[0] / 1000) % 10 * 10 + (m[1] / 1000) % 10]) return 0;
         if (!cache[(m[0] / 10000) % 10 * 10 + (m[1] / 10000) % 10]) return 0;
-        if (!cache[m[0] % 10 * 10 + (m[1] / 10) % 10]) return 0;
+        if (!prime_ends[m[0] % 10 + (m[1] / 10) % 10 * 10]) return 0;
         if (!cache[(m[0] / 10000) % 10 * 10 + (m[1] / 1000) % 10]) return 0;
         return 1;}
     if (k == 3) {
@@ -143,7 +150,7 @@ int check_primes(int m[5], int k, int primes[10000]) {
         if (!cache[(m[0] / 100) % 10 * 100 + (m[1] / 100) % 10 * 10 + (m[2] / 100) % 10]) return 0;
         if (!cache[(m[0] / 1000) % 10 * 100 + (m[1] / 1000) % 10 * 10 + (m[2] / 1000) % 10]) return 0;
         if (!cache[(m[0] / 10000) % 10 * 100 + (m[1] / 10000) % 10 * 10 + (m[2] / 10000) % 10]) return 0;
-        if (!cache[m[0] % 10 * 100 + (m[1] / 10) % 10 * 10 + (m[2] / 100) % 10]) return 0;
+        if (!prime_ends[m[0] % 10 + (m[1] / 10) % 10 * 10 + (m[2] / 100) % 10 * 100]) return 0;
         if (!cache[(m[0] / 10000) % 10 * 100 + (m[1] / 1000) % 10 * 10 + (m[2] / 100) % 10]) return 0;
         return 1; }
     if (k == 4) {
@@ -152,7 +159,7 @@ int check_primes(int m[5], int k, int primes[10000]) {
         if (!cache[(m[0] / 100) % 10 * 1000 + (m[1] / 100) % 10 * 100 + (m[2] / 100) % 10 * 10 + (m[3] / 100) % 10]) return 0;
         if (!cache[(m[0] / 1000) % 10 * 1000 + (m[1] / 1000) % 10 * 100 + (m[2] / 1000) % 10 * 10 + (m[3] / 1000) % 10]) return 0;
         if (!cache[(m[0] / 10000) % 10 * 1000 + (m[1] / 10000) % 10 * 100 + (m[2] / 10000) % 10 * 10 + (m[3] / 10000) % 10]) return 0;
-        if (!cache[m[0] % 10 * 1000 + (m[1] / 10) % 10 * 100 + (m[2] / 100) % 10 * 10 + (m[3] / 1000) % 10]) return 0;
+        if (!prime_ends[m[0] % 10 + (m[1] / 10) % 10 * 10 + (m[2] / 100) % 10 * 100 + (m[3] / 1000) % 10 * 1000]) return 0;
         if (!cache[(m[0] / 10000) % 10 * 1000 + (m[1] / 1000) % 10 * 100 + (m[2] / 100) % 10 * 10 + (m[3] / 10) % 10]) return 0;
         return 1; }
     if (k == 5) {
@@ -161,7 +168,7 @@ int check_primes(int m[5], int k, int primes[10000]) {
         if (!cache[(m[0] / 100) % 10 * 10000 + (m[1] / 100) % 10 * 1000 + (m[2] / 100) % 10 * 100 + (m[3] / 100) % 10 * 10 + (m[4] / 100) % 10]) return 0;
         if (!cache[(m[0] / 1000) % 10 * 10000 + (m[1] / 1000) % 10 * 1000 + (m[2] / 1000) % 10 * 100 + (m[3] / 1000) % 10 * 10 + (m[4] / 1000) % 10]) return 0;
         if (!cache[(m[0] / 10000) % 10 * 10000 + (m[1] / 10000) % 10 * 1000 + (m[2] / 10000) % 10 * 100 + (m[3] / 10000) % 10 * 10 + (m[4] / 10000) % 10]) return 0;
-        if (!cache[m[0] % 10 * 10000 + (m[1] / 10) % 10 * 1000 + (m[2] / 100) % 10 * 100 + (m[3] / 1000) % 10 * 10 + (m[4] / 10000) % 10]) return 0;
+        if (!cache[m[0] % 10 + (m[1] / 10) % 10 * 10 + (m[2] / 100) % 10 * 100 + (m[3] / 1000) % 10 * 1000 + m[4] / 10000 * 10000]) return 0;
         if (!cache[(m[0] / 10000) % 10 * 10000 + (m[1] / 1000) % 10 * 1000 + (m[2] / 100) % 10 * 100 + (m[3] / 10) % 10 * 10 + m[4] % 10]) return 0;
         return 1;
     }
@@ -182,6 +189,7 @@ void backtracking(int m[5], int k, int sum, int first, int primes[10000], FILE *
                 backtracking(m, k + 1, sum, first, primes, fout); // запускаем дальшейший перебор с этим значением
             }
     }
+    else return;
 }
 
 
