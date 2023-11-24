@@ -2,6 +2,11 @@
 #include <math.h>
 #include <time.h>
 
+int cache[100000] = { 0 }; // в этом массиве будем отмечать наличие простого числа (для быстрой проверки наличия)
+int primes_start_with[10000] = { 0 }; // в этом массиве будем отмечать всевозможные комбинации цифр с которых может начинаться нужное простое число
+
+
+// проверка на простое число
 int is_prime(int n) {
     for (int div = 2; div <= sqrt(n) + 1; div++) {
         if (n % div == 0) return 0;
@@ -9,18 +14,39 @@ int is_prime(int n) {
     return 1;
 }
 
+// сумма цифр числа n
 int find_sum_of_numbers(int n) {
     return n % 10 + (n / 10) % 10 + (n / 100) % 10 + (n / 1000) % 10 + n / 10000;
 }
 
 
+// проверка на наличие чётных цифр в числе (последняя строка матрицы не должна содержать четных цифр)
+int if_even_in_prime(int n) {
+    if (n % 10 % 2 == 0) return 1;
+    if ((n / 10) % 10 % 2 == 0) return 1;
+    if ((n / 100) % 10 % 2 == 0) return 1;
+    if ((n / 1000) % 10 % 2 == 0) return 1;
+    if ((n / 10000) % 10 % 2 == 0) return 1;
+    return 0;
+}
+
+
+// ищем пятизначные простые числа с нужной суммой и отмечаем их существование в отдельном массиве, чтобы потом проверять наличие за O(1)
 void find_suitable_primes(int s[10000], int sum) {
     int ind = 0;
     for (int n = 10001; n <= 99999; n += 2) {
-        if (is_prime(n) && find_sum_of_numbers(n) == sum) s[ind++] = n;
+        if (is_prime(n) && find_sum_of_numbers(n) == sum) {
+            s[ind++] = n;
+            cache[n] = 1;
+            primes_start_with[n / 10000] = 1;
+            primes_start_with[n / 1000] = 1;
+            primes_start_with[n / 100] = 1;
+            primes_start_with[n / 10] = 1;
+        }
     }
 }
 
+// проверяем сумму цифр чисел по горизонтали и по вертикали, если матрица недостроена - простая оценка: попадает ли сумма в интервал между минимально и максимально возможными значениями
 int check_sums(int m[5], int sum, int k) {
 
     if (k == 5) {
@@ -81,12 +107,32 @@ int check_sums(int m[5], int sum, int k) {
     return 1;
 }
 
+
+// проверяем являются ли вертикали и диагонали в матрице простыми числами, если матрица не достроена - есть ли нужные простые числа, начинающиеся с тех же цифр
 int check_primes(int m[5], int k, int primes[10000]) {
     if (k == 0) return 1;
     if (k == 1) {
+        int digits[10] = { 0 };
+        digits[m[0] % 10] = 1;
+        digits[(m[0] / 10) % 10] = 1;
+        digits[(m[0] / 100) % 10] = 1;
+        digits[(m[0] / 1000) % 10] = 1;
+        digits[(m[0] / 10000) % 10] = 1;
+        if (digits[0]) return 0;
+        for (int i = 0; i < 10; i++) if (digits[i] && primes_start_with[i] == 0) return 0;
         return 1; }
     if (k == 2) {
-        return 1; }
+        int two_digits[100] = { 0 };
+        for (int i = 0; i < 100; i++) two_digits[i] = 0;
+        two_digits[m[0] % 10 * 10 + m[1] % 10] = 1;
+        two_digits[(m[0] / 10) % 10 * 10 + (m[1] / 10) % 10] = 1;
+        two_digits[(m[0] / 100) % 10 * 10 + (m[1] / 100) % 10] = 1;
+        two_digits[(m[0] / 1000) % 10 * 10 + (m[1] / 1000) % 10] = 1;
+        two_digits[(m[0] / 10000) % 10 * 10 + (m[1] / 10000) % 10] = 1;
+        two_digits[m[0] % 10 * 10 + (m[1] / 10) % 10] = 1;
+        two_digits[(m[0] / 10000) % 10 * 10 + (m[1] / 1000) % 10] = 1;
+        for (int i = 0; i < 100; i++) if (two_digits[i] && primes_start_with[i] == 0) return 0;
+        return 1;}
     if (k == 3) {
         return 1; }
     if (k == 4) {
@@ -101,35 +147,30 @@ int check_primes(int m[5], int k, int primes[10000]) {
         s[5] = m[0] % 10 * 10000 + (m[1] / 10) % 10 * 1000 + (m[2] / 100) % 10 * 100 + (m[3] / 1000) % 10 * 10 + (m[4] / 10000) % 10;
         s[6] = (m[0] / 10000) % 10 * 10000 + (m[1] / 1000) % 10 * 1000 + (m[2] / 100) % 10 * 100 + (m[3] / 10) % 10 * 10 + m[4] % 10;
         for (int c = 0; c < 7; c++) {
-            int fl = 0;
-            for (int i = 0; primes[i]; i++) {
-                if (s[c] == primes[i]) { fl = 1; break; }
-            }
-            if (fl == 0) return 0;
+            if (cache[s[c]] == 0) return 0;
         }
         return 1;
     }
 }
 
 
-void backtracking(int m[5], int k, int sum, int first, int primes[10000], FILE *fout){
-    if (check_sums(m, sum, k) && check_primes(m, k, primes)) {
 
-        if (k == 5) {
+// функция перебора
+void backtracking(int m[5], int k, int sum, int first, int primes[10000], FILE *fout){
+    if (check_sums(m, sum, k) && check_primes(m, k, primes)) { // проверяем матрицу на соответствие условиям задачи
+        if (k == 5) { // если матрица заполнена - выводим
             for (int i = 0; i < 5; i++) fprintf(fout, "%d\n", m[i]);
             fprintf(fout, "\n");
         }
-        else
+        else // иначе перебираем возможные значения незаполненных строк
             for (int i = 0; primes[i]; i++) {
                 if (k == 0 && primes[i] / 10000 < first) continue; // если первая цифра меньше нужной пропускаем шаг
-                if (k == 0 && primes[i] / 10000 > first) break; // если первая цифра больше => прекращаем поиск
-                m[k] = primes[i];
-                backtracking(m, k + 1, sum, first, primes, fout);
+                if (k == 0 && primes[i] / 10000 > first) return; // если первая цифра больше => прекращаем поиск
+                if (k == 4 && if_even_in_prime(primes[i])) continue; // если есть четные цифры в числе для последней строки
+                m[k] = primes[i]; // подставляем возможное значение
+                backtracking(m, k + 1, sum, first, primes, fout); // запускаем дальшейший перебор с этим значением
             }
     }
-
-
-    // fprintf(fout, "no matrix with sum == %d and first == %d found", s, f);
 }
 
 
@@ -140,8 +181,8 @@ int main() {
     fout = fopen("output.txt", "w");
     int sum, first;
     fscanf(fin, "%d\n%d", &sum, &first);
-    int matrix[5];
-    int primes[10000];
+    int matrix[5] = { 0 };
+    int primes[10000] = { 0 };
     find_suitable_primes(primes, sum);
     // for (int i = 0; primes[i]; i++) {
        //  printf("%d\n", primes[i]);
@@ -154,6 +195,6 @@ int main() {
 
     clock_t end = clock();
     time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("The elapsed time is %f seconds", time_spent);
+    printf("Время работы функции перебора %f секунд", time_spent);
     return 0;
 }
