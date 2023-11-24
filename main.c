@@ -3,7 +3,21 @@
 #include <time.h>
 
 int cache[100000] = { 0 }; // в этом массиве будем отмечать наличие простого числа и всевозможные комбинации цифр с которых может начинаться нужное простое число (для быстрой проверки наличия)
+int matrix_count = 0; // количество найденных матриц
 
+// вывод массива пяти чисел в виде матрицы
+void matrix_output(int m[5], FILE *fout) {
+    matrix_count += 1;
+    for (int i = 0; i < 5; i++){
+        fprintf(fout, "%d ", m[i] / 10000);
+        fprintf(fout, "%d ", (m[i] / 1000) % 10);
+        fprintf(fout, "%d ", (m[i] / 100) % 10);
+        fprintf(fout, "%d ", (m[i] / 10) % 10);
+        fprintf(fout, "%d ", m[i] % 10);
+        fprintf(fout, "\n");
+    }
+    fprintf(fout, "\n");
+}
 
 // проверка на простое число
 int is_prime(int n) {
@@ -18,7 +32,6 @@ int find_sum_of_numbers(int n) {
     return n % 10 + (n / 10) % 10 + (n / 100) % 10 + (n / 1000) % 10 + n / 10000;
 }
 
-
 // проверка на наличие чётных цифр в числе (последняя строка матрицы не должна содержать четных цифр)
 int if_even_in_prime(int n) {
     if (n % 10 % 2 == 0) return 1;
@@ -28,7 +41,6 @@ int if_even_in_prime(int n) {
     if ((n / 10000) % 10 % 2 == 0) return 1;
     return 0;
 }
-
 
 // ищем пятизначные простые числа с нужной суммой и отмечаем их существование в отдельном массиве, чтобы потом проверять наличие за O(1)
 void find_suitable_primes(int s[10000], int sum) {
@@ -106,7 +118,6 @@ int check_sums(int m[5], int sum, int k) {
     return 1;
 }
 
-
 // проверяем являются ли вертикали и диагонали в матрице простыми числами, если матрица не достроена - есть ли нужные простые числа, начинающиеся с тех же цифр
 int check_primes(int m[5], int k, int primes[10000]) {
     if (k == 0) return 1;
@@ -156,14 +167,11 @@ int check_primes(int m[5], int k, int primes[10000]) {
     }
 }
 
-
-
 // функция перебора
 void backtracking(int m[5], int k, int sum, int first, int primes[10000], FILE *fout){
     if (check_primes(m, k, primes) && check_sums(m, sum, k)) { // проверяем матрицу на соответствие условиям задачи
         if (k == 5) { // если матрица заполнена - выводим
-            for (int i = 0; i < 5; i++) fprintf(fout, "%d\n", m[i]);
-            fprintf(fout, "\n");
+            matrix_output(m, fout);
         }
         else // иначе перебираем возможные значения незаполненных строк
             for (int i = 0; primes[i]; i++) {
@@ -198,6 +206,7 @@ int main() {
 
     clock_t end = clock();
     time_spent += (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("Время работы функции перебора %f секунд", time_spent);
+    printf("Время работы функции перебора %f секунд\n", time_spent);
+    printf("Количество ответов: %d ", matrix_count);
     return 0;
 }
